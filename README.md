@@ -54,5 +54,11 @@ docs/                full project documentation
 ## Security notes
 Passwords are hashed with bcrypt, sessions are signed HttpOnly JWT cookies, all SQL is parameterized, secrets live in `.env.local` (git-ignored), and routes are protected by middleware plus per-route role checks.
 
-## Team contributions
-Fill in your names and split here. Suggested: Member A = MySQL design, triggers/procedures/views, auth, transaction and budget pages. Member B = MongoDB logging and aggregations, dashboard, admin panel, reports queries. Commit separately so Git history shows individual work.
+## Team
+| Name | SRN | GitHub |
+|---|---|---|
+| Chetana Iyer | PES1UG24CS130 | [@Chet4na](https://github.com/Chet4na) |
+| Aryan Upadhyay | PES1UG25CS806 | [@aryanupadhyayyy](https://github.com/aryanupadhyayyy) |
+
+### Team contributions
+Fill in the split here. Suggested: Member A = MySQL design, triggers/procedures/views, auth, transaction and budget pages. Member B = MongoDB logging and aggregations, dashboard, admin panel, reports queries. Commit separately so Git history shows individual work.
