@@ -8,14 +8,16 @@ export default function Admin() {
   const [cats, setCats] = useState([]);
   const [nc, setNc] = useState({ name: '', type: 'expense' });
   const [msg, setMsg] = useState(null);
+  const [reviewFilter, setReviewFilter] = useState('');
+  const [days, setDays] = useState(30);
 
   const load = useCallback(async () => {
     setData(null);
     try {
       if (tab === 'categories') setCats((await api('/api/categories')).categories);
-      else setData(await api('/api/admin?view=' + tab));
+      else setData(await api('/api/admin?view=' + tab + (tab === 'audit' && reviewFilter ? '&reviewed=' + reviewFilter : '')));
     } catch (e) { setMsg({ t: 'err', m: e.message }); }
-  }, [tab]);
+  }, [tab, reviewFilter]);
   useEffect(() => { load(); }, [load]);
 
   async function addCat(e) {
@@ -25,6 +27,18 @@ export default function Admin() {
   async function delCat(id) {
     setMsg(null);
     try { await api('/api/categories?id=' + id, { method: 'DELETE' }); load(); } catch (x) { setMsg({ t: 'err', m: x.message }); }
+  }
+  async function review(id, reviewed) {
+    setMsg(null);
+    try { await api('/api/admin', { method: 'PATCH', body: { log_id: id, reviewed } }); load(); } catch (x) { setMsg({ t: 'err', m: x.message }); }
+  }
+  async function cleanup(e) {
+    e.preventDefault(); setMsg(null);
+    try {
+      const r = await api('/api/admin?older_than_days=' + days, { method: 'DELETE' });
+      setMsg({ t: 'ok', m: `Deleted ${r.deleted} activity event${r.deleted === 1 ? '' : 's'} older than ${days} days.` });
+      load();
+    } catch (x) { setMsg({ t: 'err', m: x.message }); }
   }
   async function role(u, r) {
     setMsg(null);
@@ -63,13 +77,27 @@ export default function Admin() {
       )}
 
       {tab === 'audit' && data?.logs && (
-        <div className="card wrap">
-          {data.logs.length === 0 ? <p className="empty">No audit entries yet.</p> : (
-            <table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th><th>Before</th><th>After</th></tr></thead>
-              <tbody>{data.logs.map((l) => (
-                <tr key={l._id}><td>{String(l.ts).slice(0, 19).replace('T', ' ')}</td><td>#{l.user_id}</td><td>{l.action}</td><td>{l.entity} #{l.entity_id}</td>
-                  <td>{l.before ? <pre>{JSON.stringify(l.before)}</pre> : '—'}</td><td>{l.after ? <pre>{JSON.stringify(l.after)}</pre> : '—'}</td></tr>))}</tbody></table>)}
-        </div>
+        <>
+          <div className="card row">
+            <label>Show<select value={reviewFilter} onChange={(e) => setReviewFilter(e.target.value)}>
+              <option value="">All entries</option><option value="no">Not reviewed</option><option value="yes">Reviewed</option></select></label>
+            <form className="row" onSubmit={cleanup}>
+              <label>Delete activity older than (days)<input type="number" min="1" max="365" value={days} onChange={(e) => setDays(e.target.value)} required /></label>
+              <button className="danger">Delete old activity</button>
+            </form>
+            <small>{data.activityCount} activity events stored</small>
+          </div>
+          <div className="card wrap">
+            {data.logs.length === 0 ? <p className="empty">No audit entries match.</p> : (
+              <table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th><th>Before</th><th>After</th><th>Review</th></tr></thead>
+                <tbody>{data.logs.map((l) => (
+                  <tr key={l._id}><td>{String(l.ts).slice(0, 19).replace('T', ' ')}</td><td>#{l.user_id}</td><td>{l.action}</td><td>{l.entity} #{l.entity_id}</td>
+                    <td>{l.before ? <pre>{JSON.stringify(l.before)}</pre> : '—'}</td><td>{l.after ? <pre>{JSON.stringify(l.after)}</pre> : '—'}</td>
+                    <td>{l.reviewed
+                      ? <button className="ghost" title={'Reviewed by #' + l.reviewed_by} onClick={() => review(l._id, false)}>Reviewed ✓ (undo)</button>
+                      : <button className="ghost" onClick={() => review(l._id, true)}>Mark reviewed</button>}</td></tr>))}</tbody></table>)}
+          </div>
+        </>
       )}
 
       {tab === 'users' && data?.users && (

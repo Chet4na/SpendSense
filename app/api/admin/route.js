@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import { pool } from '@/lib/db';
 import { getDb } from '@/lib/mongo';
 import { json, bad, route, requireAdmin } from '@/lib/auth';
@@ -23,9 +24,16 @@ export const GET = route(async (req) => {
   try { db = await getDb(); } catch { return json({ mongo: false }); }
 
   if (view === 'audit') {
+    // READ: optional filters on entity and on review state.
+    const q = {};
     const entity = req.nextUrl.searchParams.get('entity');
-    const logs = await db.collection('audit_logs').find(entity ? { entity: String(entity) } : {}).sort({ ts: -1 }).limit(60).toArray();
-    return json({ mongo: true, logs: logs.map((l) => ({ ...l, _id: String(l._id) })) });
+    const reviewed = req.nextUrl.searchParams.get('reviewed');
+    if (entity) q.entity = String(entity);
+    if (reviewed === 'yes') q.reviewed = true;
+    if (reviewed === 'no') q.reviewed = { $ne: true };
+    const logs = await db.collection('audit_logs').find(q).sort({ ts: -1 }).limit(60).toArray();
+    const activityCount = await db.collection('activity_events').countDocuments();
+    return json({ mongo: true, activityCount, logs: logs.map((l) => ({ ...l, _id: String(l._id) })) });
   }
 
   if (view === 'analytics') {
@@ -67,4 +75,35 @@ export const PUT = route(async (req) => {
   if (!r.affectedRows) return bad('User not found.');
   audit(s.uid, 'update', 'user', id, null, { role: b.role });
   return json({ ok: true });
+});
+
+// UPDATE (MongoDB): an admin marks an audit entry as reviewed, with an optional note.
+export const PATCH = route(async (req) => {
+  const s = await requireAdmin();
+  const b = await req.json().catch(() => ({}));
+  if (!ObjectId.isValid(String(b.log_id || ''))) return bad('Invalid log id.');
+  const reviewed = b.reviewed !== false;
+  const note = String(b.note || '').trim().slice(0, 200);
+  let db;
+  try { db = await getDb(); } catch { return json({ error: 'MongoDB is not reachable.' }, 503); }
+  const update = reviewed
+    ? { $set: { reviewed: true, reviewed_by: s.uid, reviewed_at: new Date(), review_note: note } }
+    : { $set: { reviewed: false }, $unset: { reviewed_by: '', reviewed_at: '', review_note: '' } };
+  const r = await db.collection('audit_logs').updateOne({ _id: new ObjectId(String(b.log_id)) }, update);
+  if (!r.matchedCount) return bad('Log entry not found.');
+  return json({ ok: true, modified: r.modifiedCount });
+});
+
+// DELETE (MongoDB): remove activity events older than N days (the TTL index does this
+// automatically after 90 days; this lets an admin clean up sooner).
+export const DELETE = route(async (req) => {
+  const s = await requireAdmin();
+  const days = Number(req.nextUrl.searchParams.get('older_than_days'));
+  if (!Number.isInteger(days) || days < 1 || days > 365) return bad('Days must be a whole number from 1 to 365.');
+  let db;
+  try { db = await getDb(); } catch { return json({ error: 'MongoDB is not reachable.' }, 503); }
+  const cutoff = new Date(Date.now() - days * 86400000);
+  const r = await db.collection('activity_events').deleteMany({ ts: { $lt: cutoff } });
+  audit(s.uid, 'delete', 'activity_events', null, null, { older_than_days: days, deleted: r.deletedCount });
+  return json({ ok: true, deleted: r.deletedCount });
 });
