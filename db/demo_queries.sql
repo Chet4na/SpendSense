@@ -22,7 +22,7 @@ SELECT period, expense, LAG(expense) OVER (ORDER BY period) AS prev_expense FROM
 CALL sp_monthly_report(2, DATE_FORMAT(CURDATE(), '%Y-%m'));
 SELECT * FROM v_budget_status WHERE user_id = 2;
 SELECT * FROM transactions WHERE MATCH(description) AGAINST('+grocer*' IN BOOLEAN MODE);
-EXPLAIN SELECT * FROM transactions WHERE user_id = 2 AND txn_date >= '2026-01-01';
+EXPLAIN SELECT * FROM transactions WHERE user_id = 2 AND txn_date >= '2026-11-01';
 
 -- =====================================================================
 -- Advanced query demos (nested, correlated, recursive, joins, CTE,
