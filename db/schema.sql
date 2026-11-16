@@ -179,14 +179,47 @@ DROP PROCEDURE IF EXISTS sp_monthly_report
 -- @@
 CREATE PROCEDURE sp_monthly_report(IN p_user INT, IN p_period CHAR(7))
 BEGIN
-  SELECT c.name AS category, c.type, SUM(t.amount) AS total, COUNT(*) AS txn_count,
-         ROUND(AVG(t.amount), 2) AS avg_amount
-  FROM transactions t
-  JOIN categories c ON c.category_id = t.category_id
-  WHERE t.user_id = p_user
-    AND t.txn_date BETWEEN STR_TO_DATE(CONCAT(p_period, '-01'), '%Y-%m-%d')
-                       AND LAST_DAY(STR_TO_DATE(CONCAT(p_period, '-01'), '%Y-%m-%d'))
-  GROUP BY c.name, c.type
-  HAVING SUM(t.amount) > 0
-  ORDER BY c.type, total DESC;
+  -- CTE: first pick this user's transactions for the month, then summarise them.
+  -- The window function SUM() OVER gives each category's share of its type's total.
+  WITH month_txns AS (
+    SELECT c.name AS category, c.type, t.amount
+    FROM transactions t
+    JOIN categories c ON c.category_id = t.category_id
+    WHERE t.user_id = p_user
+      AND t.txn_date BETWEEN STR_TO_DATE(CONCAT(p_period, '-01'), '%Y-%m-%d')
+                         AND LAST_DAY(STR_TO_DATE(CONCAT(p_period, '-01'), '%Y-%m-%d'))
+  ),
+  per_category AS (
+    SELECT category, type, SUM(amount) AS total, COUNT(*) AS txn_count, ROUND(AVG(amount), 2) AS avg_amount
+    FROM month_txns
+    GROUP BY category, type
+    HAVING SUM(amount) > 0
+  )
+  SELECT category, type, total, txn_count, avg_amount,
+         ROUND(total / SUM(total) OVER (PARTITION BY type) * 100, 1) AS pct_of_type
+  FROM per_category
+  ORDER BY type, total DESC;
+END
+-- @@
+DROP FUNCTION IF EXISTS fn_budget_pct
+-- @@
+CREATE FUNCTION fn_budget_pct(p_budget INT) RETURNS DECIMAL(7,1)
+READS SQL DATA
+BEGIN
+  -- Returns how much of a budget is used right now, as a percentage (NULL if no such budget).
+  DECLARE v_user INT;
+  DECLARE v_cat INT;
+  DECLARE v_period CHAR(7);
+  DECLARE v_limit DECIMAL(12,2);
+  DECLARE v_spent DECIMAL(12,2);
+  SELECT user_id, category_id, period, limit_amount INTO v_user, v_cat, v_period, v_limit
+    FROM budgets WHERE budget_id = p_budget;
+  IF v_limit IS NULL THEN
+    RETURN NULL;
+  END IF;
+  SELECT COALESCE(SUM(amount), 0) INTO v_spent FROM transactions
+   WHERE user_id = v_user AND category_id = v_cat
+     AND txn_date BETWEEN STR_TO_DATE(CONCAT(v_period, '-01'), '%Y-%m-%d')
+                      AND LAST_DAY(STR_TO_DATE(CONCAT(v_period, '-01'), '%Y-%m-%d'));
+  RETURN ROUND(v_spent / v_limit * 100, 1);
 END

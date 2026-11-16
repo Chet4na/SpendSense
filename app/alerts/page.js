@@ -18,12 +18,13 @@ export default function Alerts() {
       <div className="card">
         {d.alerts.length === 0 ? <p className="empty">No alerts yet. Set a budget and keep spending within it.</p> : (
           <div className="wrap"><table>
-            <thead><tr><th>When</th><th>Level</th><th>Alert</th><th className="num">Spent</th><th className="num">Limit</th></tr></thead>
+            <thead><tr><th>When</th><th>Level</th><th>Alert</th><th className="num">Spent</th><th className="num">Limit</th><th className="num">Used now</th></tr></thead>
             <tbody>{d.alerts.map((a) => (
               <tr key={a.alert_id} style={{ fontWeight: a.is_read ? 400 : 700 }}>
                 <td>{String(a.created_at).slice(0, 16)}</td>
                 <td><span className={'pill ' + a.level}>{a.level}</span></td>
-                <td>{a.message}</td><td className="num">{money(a.spent)}</td><td className="num">{money(a.limit_amount)}</td></tr>))}
+                <td>{a.message}</td><td className="num">{money(a.spent)}</td><td className="num">{money(a.limit_amount)}</td>
+                <td className="num">{a.pct_now === null ? '—' : a.pct_now + '%'}</td></tr>))}
             </tbody></table></div>
         )}
       </div>

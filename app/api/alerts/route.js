@@ -3,10 +3,13 @@ import { json, route, requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+// fn_budget_pct is a stored SQL function: it returns how much of the budget is used now,
+// which can differ from when the alert was raised (e.g. after an expense is deleted).
 export const GET = route(async () => {
   const s = await requireUser();
   const [rows] = await pool.query(
-    `SELECT a.alert_id, a.level, a.message, a.spent, a.is_read, a.created_at, c.name AS category, b.period, b.limit_amount
+    `SELECT a.alert_id, a.level, a.message, a.spent, a.is_read, a.created_at, c.name AS category, b.period, b.limit_amount,
+            fn_budget_pct(a.budget_id) AS pct_now
        FROM alerts a JOIN budgets b ON b.budget_id = a.budget_id JOIN categories c ON c.category_id = b.category_id
       WHERE a.user_id = ? ORDER BY a.created_at DESC, a.alert_id DESC LIMIT 100`, [s.uid]);
   return json({ alerts: rows, unread: rows.filter((a) => !a.is_read).length });
