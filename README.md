@@ -61,4 +61,10 @@ Passwords are hashed with bcrypt, sessions are signed HttpOnly JWT cookies, all 
 | Aryan Upadhyay | PES1UG25CS806 | [@aryanupadhyayyy](https://github.com/aryanupadhyayyy) |
 
 ### Team contributions
-Fill in the split here. Suggested: Member A = MySQL design, triggers/procedures/views, auth, transaction and budget pages. Member B = MongoDB logging and aggregations, dashboard, admin panel, reports queries. Commit separately so Git history shows individual work.
+| Area | Chetana Iyer | Aryan Upadhyay |
+|---|---|---|
+| Database | MySQL schema (`db/schema.sql`): tables, constraints, indexes | MongoDB collections and indexes (`lib/mongo.js`) |
+| Database logic | Triggers, `sp_check_budget`, `sp_monthly_report`, views | Audit trail and activity logging across API routes |
+| Backend | Auth (bcrypt, JWT, middleware), transactions, budgets, accounts, categories, alerts APIs | Dashboard and admin APIs, MongoDB aggregation pipelines |
+| Frontend | Login, transactions, budgets, accounts and alerts pages | Dashboard and admin panel pages |
+| Reports and setup | Demo data for budget alerts | Report queries (`db/demo_queries.sql`), MongoDB setup in `scripts/setup-db.mjs`, `.env.example`, `.gitignore` |
