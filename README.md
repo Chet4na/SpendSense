@@ -72,8 +72,11 @@ Passwords are hashed with bcrypt, sessions are signed HttpOnly JWT cookies, all 
 ### Team contributions
 | Area | Chetana Iyer | Aryan Upadhyay |
 |---|---|---|
-| Database | MySQL schema (`db/schema.sql`): tables, constraints, indexes | MongoDB collections and indexes (`lib/mongo.js`) |
-| Database logic | Triggers, `sp_check_budget`, `sp_monthly_report`, views | Audit trail and activity logging across API routes |
-| Backend | Auth (bcrypt, JWT, middleware), transactions, budgets, accounts, categories, alerts APIs | Dashboard and admin APIs, MongoDB aggregation pipelines |
-| Frontend | Login, transactions, budgets, accounts and alerts pages | Dashboard and admin panel pages |
-| Reports and setup | Demo data for budget alerts | Report queries (`db/demo_queries.sql`), MongoDB setup in `scripts/setup-db.mjs`, `.env.example`, `.gitignore` |
+| Database | MySQL schema (`db/schema.sql`): tables, constraints, indexes | MongoDB collections and indexes (`lib/mongo.js`); stored function `fn_budget_pct` |
+| Database logic | Triggers, `sp_check_budget`, `sp_monthly_report`, views | Audit trail and activity logging; CTE rewrite of `sp_monthly_report`; recursive CTE and correlated subqueries on the dashboard |
+| NoSQL operations | | MongoDB read (`find`, 4 aggregation pipelines), update (`updateOne` audit review) and delete (`deleteMany` activity cleanup, TTL index) |
+| Access control | Auth (bcrypt, JWT, middleware), `requireUser` / `requireAdmin` | MySQL roles `ss_user`, `ss_admin`, `ss_readonly` with GRANTs (`db/roles.sql`) |
+| Backend | Transactions, budgets, accounts, categories, alerts APIs | Dashboard and admin APIs |
+| Frontend | Login, transactions, budgets, accounts and alerts pages | Dashboard and admin panel pages, audit review and cleanup UI, "Used now" on alerts |
+| Reports and setup | Demo data for budget alerts | Report queries (`db/demo_queries.sql`), `db/mongo_queries.js`, MongoDB and roles setup in `scripts/setup-db.mjs`, `.env.example`, `.gitignore` |
+| Documentation | Project documentation (`docs/PROJECT_DOCUMENTATION.md`) | Docs updates for new features, test cases T13–T17, screenshots |
