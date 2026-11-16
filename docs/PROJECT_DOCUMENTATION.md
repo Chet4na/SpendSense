@@ -25,6 +25,10 @@ In scope: authentication, two roles (user, admin), accounts, transfers, transact
 | F8 | Admin views audit log and activity analytics |
 
 ## 5. ER diagram
+![ER diagram](diagrams/er-diagram.png)
+
+The same diagram as Mermaid source:
+
 ```mermaid
 erDiagram
   USERS ||--o{ ACCOUNTS : owns
@@ -129,6 +133,8 @@ Advanced concepts demonstrated: transactions, triggers, stored procedures, a sto
 - Search: FULLTEXT + LIKE with filters by category, type and date range.
 
 ## 11. System architecture
+![Architecture](diagrams/architecture.png)
+
 ```
 Browser (Next.js pages, React)
    │  fetch /api/*  (HttpOnly JWT cookie)

@@ -33,6 +33,13 @@ npm run dev                       # http://localhost:3000
 
 The demo user already has a Food budget at 87% (warning alert) and a Shopping budget at 117% (exceeded alert).
 
+## Demo deliverables
+All 14 mini project deliverables (ER diagram, schema, DDL, NoSQL, queries, advanced SQL, interface, API,
+authentication, documentation, contribution) with real outputs are in
+[docs/SpendSense_Demo_Deliverables.pdf](docs/SpendSense_Demo_Deliverables.pdf) (Word version alongside).
+
+![ER diagram](docs/diagrams/er-diagram.png)
+
 ## How automatic budget alerts work
 1. A user sets a budget (category + month + limit).
 2. Every expense insert or update fires a MySQL trigger, which calls `sp_check_budget`.
@@ -51,7 +58,8 @@ scripts/setup-db.mjs creates DB, runs schema, seeds data, prepares MongoDB
 app/api/*            route handlers (backend layer)
 app/*                pages: dashboard, transactions, budgets, accounts, alerts, admin
 lib/                 MySQL pool, MongoDB logging, JWT auth helpers
-docs/                full project documentation
+docs/                full project documentation, screenshots, diagrams
+docs/SpendSense_Demo_Deliverables.pdf  all 14 demo deliverables in one document (also .docx)
 ```
 
 ## Role-based access (three layers)

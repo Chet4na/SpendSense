@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="560" viewBox="0 0 1300 560" font-family="Arial, Helvetica, sans-serif">
+<rect width="1300" height="560" fill="#fff"/>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5f6b7a"/></marker></defs>
+<text x="334" y="140" font-size="14" fill="#3d4752">pages</text>
+<text x="190" y="300" font-size="14" fill="#3d4752">fetch() JSON</text>
+<text x="868" y="270" font-size="14" fill="#3d4752">SQL (?)</text>
+<text x="830" y="410" font-size="14" fill="#3d4752">logs</text>
+<g><rect x="40" y="90" width="280" height="120" rx="8" fill="#fff" stroke="#5f6b7a" stroke-width="1.8"/>
+<text x="60" y="124" font-size="18" font-weight="700" fill="#1d2329">Browser (React pages)</text>
+<text x="60" y="152" font-size="14" fill="#1d2329">Login, Dashboard, Transactions,</text>
+<text x="60" y="174" font-size="14" fill="#1d2329">Budgets, Accounts, Alerts, Admin</text>
+<text x="60" y="196" font-size="13" fill="#5f6b7a">HttpOnly JWT cookie sent automatically</text></g>
+<g><rect x="400" y="40" width="420" height="480" rx="10" fill="#f6f8f8" stroke="#5f6b7a" stroke-width="1.8"/>
+<text x="420" y="74" font-size="18" font-weight="700" fill="#1d2329">Next.js 14 server (App Router)</text>
+<rect x="420" y="100" width="380" height="100" rx="8" fill="#fff" stroke="#5f6b7a" stroke-width="1.5"/>
+<text x="440" y="130" font-size="16" font-weight="700" fill="#1d2329">middleware.js</text>
+<text x="440" y="156" font-size="14" fill="#1d2329">Verifies JWT; no token → /login</text>
+<text x="440" y="178" font-size="14" fill="#1d2329">Non-admin on /admin → /dashboard</text>
+<rect x="420" y="220" width="380" height="280" rx="8" fill="#fff" stroke="#5f6b7a" stroke-width="1.5"/>
+<text x="440" y="250" font-size="16" font-weight="700" fill="#1d2329">API route handlers  app/api/*/route.js</text>
+<text x="440" y="278" font-size="14" fill="#1d2329">auth · transactions · budgets · accounts</text>
+<text x="440" y="300" font-size="14" fill="#1d2329">categories · alerts · dashboard · admin</text>
+<text x="440" y="334" font-size="14" fill="#1d2329">1. requireUser() / requireAdmin()</text>
+<text x="440" y="356" font-size="14" fill="#1d2329">2. Validate input</text>
+<text x="440" y="378" font-size="14" fill="#1d2329">3. Parameterized SQL (mysql2 pool)</text>
+<text x="440" y="400" font-size="14" fill="#1d2329">4. audit() / activity() to MongoDB</text>
+<text x="440" y="422" font-size="14" fill="#1d2329">5. Return JSON (MySQL errors → messages)</text>
+<text x="440" y="470" font-size="13" fill="#5f6b7a">lib/db.js · lib/mongo.js · lib/auth.js</text></g>
+<g><rect x="920" y="60" width="340" height="240" rx="8" fill="#fff" stroke="#1f6f6b" stroke-width="2.2"/>
+<text x="940" y="94" font-size="18" font-weight="700" fill="#1d2329">MySQL 8  (financial data)</text>
+<text x="940" y="124" font-size="14" fill="#1d2329">6 tables: PK, FK, UNIQUE, CHECK</text>
+<text x="940" y="148" font-size="14" fill="#1d2329">3 triggers on transactions</text>
+<text x="940" y="172" font-size="14" fill="#1d2329">sp_check_budget, sp_monthly_report</text>
+<text x="940" y="196" font-size="14" fill="#1d2329">fn_budget_pct, 2 views</text>
+<text x="940" y="220" font-size="14" fill="#1d2329">Roles: ss_user, ss_admin, ss_readonly</text>
+<text x="940" y="276" font-size="13" fill="#5f6b7a">ACID · foreign keys · constraints</text></g>
+<g><rect x="920" y="330" width="340" height="190" rx="8" fill="#eef6f5" stroke="#1f6f6b" stroke-width="2.2"/>
+<text x="940" y="364" font-size="18" font-weight="700" fill="#1d2329">MongoDB 7  (logs, analytics)</text>
+<text x="940" y="394" font-size="14" fill="#1d2329">audit_logs (kept)</text>
+<text x="940" y="418" font-size="14" fill="#1d2329">activity_events (TTL 90 days)</text>
+<text x="940" y="442" font-size="14" fill="#1d2329">4 aggregation pipelines</text>
+<text x="940" y="466" font-size="14" fill="#1d2329">Fire-and-forget + retry queue</text>
+<text x="940" y="500" font-size="13" fill="#5f6b7a">flexible schema · write-heavy</text></g>
+<g fill="none" stroke="#5f6b7a" stroke-width="1.8">
+<path d="M320 150H420" marker-end="url(#a)"/><path d="M180 210V380H420" marker-end="url(#a)"/>
+<path d="M800 360H860V170H920" marker-end="url(#a)"/><path d="M800 420H920" marker-end="url(#a)"/></g>
+</svg>
