@@ -102,23 +102,30 @@ Failure handling: MongoDB writes are fire-and-forget with an in-memory retry que
 MongoDB collections
 - `audit_logs`: `{user_id, action, entity, entity_id, before, after, ts}`. Index `{user_id:1, ts:-1}`.
 - `activity_events`: `{user_id, action, meta, ts}`. Indexes `{ts:1}` with TTL 90 days, `{action:1, ts:-1}`.
+- Review fields added by an admin on `audit_logs`: `reviewed`, `reviewed_by`, `reviewed_at`, `review_note`.
 
 ## 9. Implementation summary (see `db/schema.sql`)
 - **DDL**: CREATE with PK/FK/UNIQUE/CHECK, composite indexes, FULLTEXT index; ALTER and DROP shown in `db/demo_queries.sql`.
 - **Triggers**: `trg_txn_after_insert/update/delete` keep account balances in sync and call `sp_check_budget`.
-- **Stored procedures**: `sp_check_budget` (alert logic), `sp_monthly_report`.
+- **Stored procedures**: `sp_check_budget` (alert logic), `sp_monthly_report` (written with two CTEs and `SUM() OVER (PARTITION BY type)`).
+- **Stored function**: `fn_budget_pct(budget_id)` returns the % of a budget used now; shown as "Used now" on the Alerts page.
+- **CTEs**: `WITH RECURSIVE months` generates the last 6 months for the dashboard (months with no spending show 0); plain CTEs in the dashboard and `sp_monthly_report`.
+- **Correlated subqueries**: the dashboard's unusual-expense check compares each transaction with its own category's average.
+- **RBAC in the database**: `db/roles.sql` creates MySQL roles `ss_user`, `ss_admin`, `ss_readonly` with GRANTs, including a column-level privilege that hides `password_hash`.
 - **Views**: `v_monthly_category_summary`, `v_budget_status`.
 - **Transactions**: account transfer uses BEGIN, `SELECT ... FOR UPDATE`, two UPDATEs, COMMIT or ROLLBACK.
 - **Indexing**: `(user_id, txn_date)` and `(user_id, category_id, txn_date)`; compare with `EXPLAIN` in `demo_queries.sql`.
 - **Full-text search**: `MATCH(description) AGAINST(... IN BOOLEAN MODE)` with a LIKE fallback.
 - **NoSQL aggregation**: `$match`, `$group`, `$sort`, `$limit`, `$dateToString` in `app/api/admin/route.js`.
+- **NoSQL RUD**: Read with `find` (filters by entity and review state) and 4 aggregation pipelines; Update with `updateOne` + `$set`/`$unset` (mark an audit entry reviewed); Delete with `deleteMany` (admin removes activity older than N days) and automatically with the TTL index.
 
-Advanced concepts demonstrated: transactions, triggers, stored procedures, views, indexing, full-text search, window functions, NoSQL aggregation (8, requirement is 4).
+Advanced concepts demonstrated: transactions, triggers, stored procedures, a stored function, views, CTEs (incl. recursive), correlated subqueries, indexing, full-text search, window functions, database roles, NoSQL aggregation and RUD.
 
 ## 10. Important queries
 - Budget status: view `v_budget_status` (JOIN, LEFT JOIN, GROUP BY, CASE).
-- Month-over-month: `LAG(expense) OVER (ORDER BY period)` over a grouped subquery.
-- Anomalies: join with a subquery `AVG(amount) ... HAVING COUNT(*) >= 4`, filter `amount > 2 * avg`.
+- Month-over-month: recursive CTE `months` LEFT JOIN CTE `totals`, then `LAG(expense) OVER (ORDER BY month_start)`.
+- Anomalies: correlated subqueries `(SELECT AVG(t2.amount) ... WHERE t2.category_id = t.category_id)`, at least 4 samples, filter `amount > 2 * avg`.
+- All demo queries (nested, correlated, recursive, joins, CTE, function, roles) are in `db/demo_queries.sql`.
 - Search: FULLTEXT + LIKE with filters by category, type and date range.
 
 ## 11. System architecture
@@ -134,7 +141,20 @@ Route Handlers (validation, role checks)
 
 ## 12. Roles
 - **User**: own accounts, transactions, budgets, alerts, dashboard.
-- **Admin**: everything above plus categories, user roles, audit log, analytics.
+- **Admin**: everything above plus categories, user roles, audit log (review), activity cleanup, analytics.
+
+Roles are enforced in three layers:
+1. **Frontend / middleware**: `middleware.js` redirects signed-out users to `/login` and non-admins away from `/admin`.
+2. **API**: every route calls `requireUser()` or `requireAdmin()` (403 for a normal user on admin APIs).
+3. **Database**: `db/roles.sql` mirrors the same roles as MySQL roles.
+
+| MySQL role | Privileges |
+|---|---|
+| `ss_user` | SELECT/INSERT/UPDATE/DELETE on transactions, budgets; SELECT/INSERT/UPDATE on accounts; SELECT/UPDATE on alerts; SELECT on categories and both views; SELECT on users (user_id, name, email, role only); EXECUTE on `sp_check_budget`, `sp_monthly_report`, `fn_budget_pct` |
+| `ss_admin` | Inherits `ss_user`, plus INSERT/UPDATE/DELETE on categories and UPDATE(role) on users |
+| `ss_readonly` | SELECT on the whole database, for reports |
+
+Verified: `ss_demo_user` gets error 1142 inserting a category and 1143 reading `password_hash`; `ss_demo_admin` can add and delete categories but gets 1142 on `DROP TABLE`.
 
 ## 13. Test cases
 | # | Test | Expected |
@@ -151,8 +171,13 @@ Route Handlers (validation, role checks)
 | T10 | Raise a budget limit | Alerts for it reset and are re-evaluated |
 | T11 | Delete a category in use | Rejected (FK RESTRICT) |
 | T12 | Stop MongoDB, add a transaction | Transaction still succeeds; log is retried later |
+| T13 | Admin marks an audit entry reviewed, then filters "Reviewed" | Entry has `reviewed: true`, `reviewed_by`; filter shows only it |
+| T14 | Admin deletes activity older than 7 days | `deleteMany` count returned; cleanup itself is audited |
+| T15 | Normal user calls PATCH/DELETE `/api/admin` | 403 |
+| T16 | Dashboard for a month with gaps (e.g. 2026-03) | 6 months listed, empty months show 0 (recursive CTE) |
+| T17 | `ss_demo_user` inserts a category in MySQL | ERROR 1142, denied |
 
-Verified in development: T2, T3, T4, T5, T6, T7, T8, T12 against MySQL 8.0 via the HTTP API.
+Verified in development: T2, T3, T4, T5, T6, T7, T8, T12 against MySQL 8.0 via the HTTP API; T13 to T17 against MySQL 8.0 and MongoDB 7.
 
 ## 14. Screenshots
 Add screenshots of: login, dashboard, transactions, budgets, alerts, accounts, admin (analytics, audit, users, categories).

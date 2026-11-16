@@ -43,13 +43,22 @@ The demo user already has a Food budget at 87% (warning alert) and a Shopping bu
 ## Project layout
 ```
 db/schema.sql        tables, constraints, indexes, triggers, views, procedures
-db/demo_queries.sql  ALTER/DROP, JOIN, GROUP BY, subquery, window function, EXPLAIN demos
+db/demo_queries.sql  DDL, DML with triggers, nested/correlated/recursive queries, joins, CTEs,
+                     window functions, function, roles, EXPLAIN demos
+db/roles.sql         MySQL roles ss_user, ss_admin, ss_readonly (RBAC in the database)
+db/mongo_queries.js  mongosh demo: indexes, insert, find, aggregate, updateOne, deleteMany
 scripts/setup-db.mjs creates DB, runs schema, seeds data, prepares MongoDB
 app/api/*            route handlers (backend layer)
 app/*                pages: dashboard, transactions, budgets, accounts, alerts, admin
 lib/                 MySQL pool, MongoDB logging, JWT auth helpers
 docs/                full project documentation
 ```
+
+## Role-based access (three layers)
+1. Pages: `middleware.js` sends signed-out users to `/login` and non-admins away from `/admin`.
+2. API: routes call `requireUser()` / `requireAdmin()`; a normal user gets 403 on admin APIs.
+3. Database: `db/roles.sql` defines matching MySQL roles. Set `MYSQL_ROLE_DEMO_PASSWORD` in `.env.local`
+   before `npm run db:setup` to also create demo accounts `ss_demo_user` and `ss_demo_admin`.
 
 ## Security notes
 Passwords are hashed with bcrypt, sessions are signed HttpOnly JWT cookies, all SQL is parameterized, secrets live in `.env.local` (git-ignored), and routes are protected by middleware plus per-route role checks.
