@@ -36,6 +36,30 @@ for (const chunk of sql.split(/^-- @@\s*$/m)) {
 }
 console.log(`MySQL: ran ${n} schema statements.`);
 
+// RBAC: database roles (db/roles.sql). Needs a MySQL account allowed to create roles.
+try {
+  const rolesSql = fs.readFileSync(path.join(root, 'db', 'roles.sql'), 'utf8').replaceAll('{{DB}}', `\`${dbName}\``);
+  let r = 0;
+  for (const chunk of rolesSql.split(/^-- @@\s*$/m)) {
+    const body = chunk.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n').trim();
+    if (body) { await db.query(body); r++; }
+  }
+  // Optional demo logins for showing RBAC live: ss_demo_user (role ss_user), ss_demo_admin (role ss_admin).
+  const pw = process.env.MYSQL_ROLE_DEMO_PASSWORD;
+  if (pw) {
+    for (const [u, role] of [['ss_demo_user', 'ss_user'], ['ss_demo_admin', 'ss_admin']]) {
+      await db.query("CREATE USER IF NOT EXISTS ?@'%' IDENTIFIED BY ?", [u, pw]);
+      await db.query(`GRANT ${role} TO ?@'%'`, [u]);
+      await db.query(`SET DEFAULT ROLE ${role} TO ?@'%'`, [u]);
+    }
+    console.log(`MySQL: ran ${r} role statements; demo accounts ss_demo_user and ss_demo_admin ready.`);
+  } else {
+    console.log(`MySQL: ran ${r} role statements (set MYSQL_ROLE_DEMO_PASSWORD to also create demo accounts).`);
+  }
+} catch (e) {
+  console.warn('MySQL roles skipped (' + e.message + '). The app still runs.');
+}
+
 const [[{ cnt }]] = await db.query('SELECT COUNT(*) AS cnt FROM users');
 let demoId = null;
 if (cnt === 0) {
