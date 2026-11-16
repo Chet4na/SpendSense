@@ -180,7 +180,43 @@ Verified: `ss_demo_user` gets error 1142 inserting a category and 1143 reading `
 Verified in development: T2, T3, T4, T5, T6, T7, T8, T12 against MySQL 8.0 via the HTTP API; T13 to T17 against MySQL 8.0 and MongoDB 7.
 
 ## 14. Screenshots
-Add screenshots of: login, dashboard, transactions, budgets, alerts, accounts, admin (analytics, audit, users, categories).
+Demo data, taken from the running app.
+
+**Login**
+
+![Login](screenshots/01-login.png)
+
+**Dashboard: balance, budgets, spending by category, 6-month table (recursive CTE), unusual expenses (correlated subquery)**
+
+![Dashboard: balance, budgets, spending by category, 6-month table (recursive CTE), unusual expenses (correlated subquery)](screenshots/02-dashboard.png)
+
+**Transactions**
+
+![Transactions](screenshots/03-transactions.png)
+
+**Budgets**
+
+![Budgets](screenshots/04-budgets.png)
+
+**Accounts and transfers**
+
+![Accounts and transfers](screenshots/05-accounts.png)
+
+**Budget alerts with "Used now" from fn_budget_pct**
+
+![Budget alerts with "Used now" from fn_budget_pct](screenshots/06-alerts.png)
+
+**Admin: activity analytics (MongoDB aggregation pipelines)**
+
+![Admin: activity analytics (MongoDB aggregation pipelines)](screenshots/07-admin-analytics.png)
+
+**Admin: audit log with review (MongoDB updateOne) and activity cleanup (deleteMany)**
+
+![Admin: audit log with review (MongoDB updateOne) and activity cleanup (deleteMany)](screenshots/08-admin-audit.png)
+
+**Admin: users and roles**
+
+![Admin: users and roles](screenshots/09-admin-users.png)
 
 ## 15. Conclusion and future enhancements
 SpendSense shows how relational integrity (MySQL) and flexible logging (MongoDB) complement each other. Future work: recurring transactions via a scheduled procedure, CSV export, email or push notifications for alerts, semantic search over transaction descriptions with pgvector or Chroma, and multi-currency support.
